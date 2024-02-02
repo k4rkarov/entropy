@@ -4,11 +4,83 @@ import (
 	"fmt"
 	"math"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 )
 
-var semanticallyWeakPasswords = []string{"password123", "senha@2024", "123456"}
+func isNumericSequence(password string) bool {
+	for i := 0; i < len(password)-2; i++ {
+		if password[i] >= '0' && password[i] <= '9' && password[i] == password[i+1]-1 && password[i] == password[i+2]-2 {
+			return true
+		}
+	}
+	return false
+}
+
+func isCommonWord(password string) bool {
+	commonWords := []string{"senha", "password", "pass", "mudar", "change", "teste", "test"}
+	for _, word := range commonWords {
+		if strings.Contains(strings.ToLower(password), word) {
+			return true
+		}
+	}
+	return false
+}
+
+func isYearPattern(password string) bool {
+	return regexp.MustCompile(`(?i)[a-z]+\@\d{4}`).MatchString(password)
+}
+
+func calculateSemanticStrength(password string) string {
+	if isNumericSequence(password) || isCommonWord(password) || isYearPattern(password) {
+		return "Password is semantically weak!"
+	}
+
+	return "Password is PROBABLY NOT semantically weak!"
+}
+
+
+func printHelp() {
+	fmt.Println(`
+  ______       _                         
+ |  ____|     | |                        
+ | |__   _ __ | |_ _ __ ___  _ __  _   _ 
+ |  __| | '_ \| __| '__/ _ \| '_ \| | | |
+ | |____| | | | |_| | | (_) | |_) | |_| |
+ |______|_| |_|\__|_|  \___/| .__/ \__, |
+                            | |     __/ |
+                            |_|    |___/ 
+ 
+       by k4rkarov (v1.0)
+
+
+Usage:
+  entropy <option> <password> [criteria]
+
+Options:
+  1 - Calculate Password Entropy
+  2 - Calculate Entropy based on specified criteria
+  3 - Evaluate password's semantic strength
+
+Criteria (for option 2):
+  length - The number of characters in the password
+  lc     - lowercase characters: (a-z)
+  uc     - uppercase characters: (A-Z)
+  d      - digits: (0-9)
+  s      - special characters: !@#$%^&*()
+  sp     - additional special characters: ~-_=+[{]}|;:'",<.>/?
+  spc    - space (' ')
+
+Examples:
+  entropy 1 mypassword
+  entropy 1 'Pass@2#@!'
+  entropy 2 14 lc uc d
+  entropy 3 Pass@123
+
+`)
+}
+
 
 func calculatePasswdEntropy(password string) string {
 	length := len(password)
@@ -104,60 +176,22 @@ func calculateEntropy(length int, lowercase, uppercase, digit, special, specialP
 		chars += 1
 	}
 
-	if length > 0 {
-		text += fmt.Sprintf("\nEntropy: %.2f bits\n", math.Round(math.Log2(math.Pow(float64(chars), float64(length)))*100)/100)
-	} else {
-		text += "No criteria selected. Unable to calculate entropy.\n"
-	}
+	if length > 0 && (lowercase || uppercase || digit || special || specialPlus || space) {
+    text += fmt.Sprintf("Entropy: %.2f bits", math.Round(math.Log2(math.Pow(float64(chars), float64(length)))*100)/100)
+} else if length > 0 {
+    text += "No valid criteria selected. Please select at least one criteria:\n" +
+  "  lc  - lowercase characters: (a-z)\n" +
+  "  uc  - uppercase characters: (A-Z)\n" +
+  "  d   - digits: (0-9)\n" +
+  "  s   - special characters: !@#$%^&*()\n" +
+  "  sp  - additional special characters: ~-_=+[{]}|;:'\",<.>/?\n" +
+  "  spc - space (' ')\n"
+
+} else {
+    text += "Missing password length for options 2."
+}
 
 	return text
-}
-
-func calculateSemanticStrength(password string) string {
-	for _, weakPassword := range semanticallyWeakPasswords {
-		if password == weakPassword {
-			return "Password is semantically weak!"
-		}
-	}
-
-	return "Password is PROBABLY NOT semantically weak!"
-}
-
-func printHelp() {
-    fmt.Println(`
-  ______       _                         
- |  ____|     | |                        
- | |__   _ __ | |_ _ __ ___  _ __  _   _ 
- |  __| | '_ \| __| '__/ _ \| '_ \| | | |
- | |____| | | | |_| | | (_) | |_) | |_| |
- |______|_| |_|\__|_|  \___/| .__/ \__, |
-                            | |     __/ |
-                            |_|    |___/ 
-	`)
-	fmt.Println("    by k4rkarov (v1.0)")
-	fmt.Println(" ")
-	fmt.Println(" ")
-	fmt.Println("Usage:")
-	fmt.Println("  entropy <options> '<password length>' [criteria]")
-	fmt.Println(" ")
-	fmt.Println("Options:")
-	fmt.Println("  1 - Calculate Password Entropy")
-	fmt.Println("  2 - Calculate Entropy based on data criteria")
-	fmt.Println("  3 - Calculate password's semantic strength")
-	fmt.Println(" ")
-	fmt.Println("Criteria (optional):")
-	fmt.Println("  lc - lowercase characters")
-	fmt.Println("  uc - uppercase characters")
-	fmt.Println("  d - digits")
-	fmt.Println("  s - special characters = !@#$%^&*()")
-    fmt.Println("  sp - additional special characters = `~-_=+[{]}\\|;:'\",<.>/?")
-	fmt.Println("  spc - space")
-	fmt.Println(" ")
-	fmt.Println("Example:")
-	fmt.Println("  entropy 1 mypassword")
-	fmt.Println("  entropy 1 'Pass@2#@!'")
-	fmt.Println("  entropy 2 14 lc uc d")
-	fmt.Println("  entropy 3 Pass@123")
 }
 
 func main() {

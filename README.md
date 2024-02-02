@@ -1,7 +1,7 @@
 <h3 align="center">Entropy</h3>
 <h1 align="center"> <img src="https://github.com/k4rkarov/entropy/blob/main/carbon.png" alt="procontor" width="400px"></h1>
 
-A Go program designed to assess password strength by calculating entropy and semantic strength. This project is a work in progress, and contributions are welcome through pull requests :) 
+A Go program designed to assess password strength by calculating entropy and semantic strength. This project is a work in progress, and contributions are welcome through pull requests :)
 
 <br>
 
@@ -27,38 +27,40 @@ mv entropy /usr/bin
 ```
 
 # Usage
+
 ```
 $ entropy
 
-  ______       _                         
- |  ____|     | |                        
- | |__   _ __ | |_ _ __ ___  _ __  _   _ 
+  ______       _
+ |  ____|     | |
+ | |__   _ __ | |_ _ __ ___  _ __  _   _
  |  __| | '_ \| __| '__/ _ \| '_ \| | | |
  | |____| | | | |_| | | (_) | |_) | |_| |
  |______|_| |_|\__|_|  \___/| .__/ \__, |
                             | |     __/ |
-                            |_|    |___/ 
-	
-    by k4rkarov (v1.0)
- 
- 
+                            |_|    |___/
+
+       by k4rkarov (v1.0)
+
+
 Usage:
-  entropy <options> '<password length>' [criteria]
- 
+  entropy <option> <password> [criteria]
+
 Options:
   1 - Calculate Password Entropy
-  2 - Calculate Entropy based on data criteria
-  3 - Calculate password's semantic strength
- 
-Criteria (optional):
-  lc - lowercase characters
-  uc - uppercase characters
-  d - digits
-  s - special characters = !@#$%^&*()
-  sp - additional special characters = `~-_=+[{]}\|;:'",<.>/?
-  spc - space
- 
-Example:
+  2 - Calculate Entropy based on specified criteria
+  3 - Evaluate password's semantic strength
+
+Criteria (for option 2):
+  length - The number of characters in the password
+  lc     - lowercase characters: (a-z)
+  uc     - uppercase characters: (A-Z)
+  d      - digits: (0-9)
+  s      - special characters: !@#$%^&*()
+  sp     - additional special characters: ~-_=+[{]}|;:'",<.>/?
+  spc    - space (' ')
+
+Examples:
   entropy 1 mypassword
   entropy 1 'Pass@2#@!'
   entropy 2 14 lc uc d
@@ -84,7 +86,6 @@ Lower Case Latin Alphabet (a-z)
 
 ```
 $ entropy 2 14 lc uc d
-
 Entropy: 83.36 bits
 
 ```
