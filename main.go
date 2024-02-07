@@ -56,21 +56,24 @@ func printHelp() {
 
 
 Usage:
-  entropy <option> <password> [criteria]
+  entropy <option> <password> [criteria] [-v]
 
 Options:
-  1 - Calculate Password Entropy
-  2 - Calculate Entropy based on specified criteria
-  3 - Evaluate password's semantic strength
+  1       Calculate Password Entropy
+  2       Calculate Entropy based on specified criteria
+  3       Evaluate password's semantic strength
 
 Criteria (for option 2):
-  length - The number of characters in the password
-  lc     - lowercase characters: (a-z)
-  uc     - uppercase characters: (A-Z)
-  d      - digits: (0-9)
-  s      - special characters: !@#$%^&*()
-  sp     - additional special characters: ~-_=+[{]}|;:'",<.>/?
-  spc    - space (' ')
+  length  The number of characters in the password
+  lc      lowercase characters: (a-z)
+  uc      uppercase characters: (A-Z)
+  d       digits: (0-9)
+  s       special characters: !@#$%^&*()
+  sp      additional special characters: ~-_=+[{]}|;:'",<.>/?
+  spc     space (' ')
+
+Output:
+  -v      Increase verbosity level
 
 Examples:
   entropy 1 mypassword
@@ -82,15 +85,15 @@ Examples:
 }
 
 
-func calculatePasswdEntropy(password string) string {
-	length := len(password)
-	passCharac := make([]string, 0)
-	text := "Your password contains:\n"
+func calculatePasswdEntropy(password string, verbose bool) string {
+    length := len(password)
+    passCharac := make([]string, 0)
+    text := ""
 
-	var lowerCase, upperCase, numbers, specialChars, specialCharsPlus, space, others, chars int
+    var lowerCase, upperCase, numbers, specialChars, specialCharsPlus, space, others, chars int
 
-	for i := 0; i < length; i++ {
-		c := string(password[i])
+    for i := 0; i < length; i++ {
+        c := string(password[i])
 
 		if lowerCase == 0 && strings.Contains("abcdefghijklmnopqrstuvwxyz", c) {
 			chars += 26
@@ -122,35 +125,41 @@ func calculatePasswdEntropy(password string) string {
 		}
 	}
 
-	text += fmt.Sprintf("\nEntropy: %.2f bits\nCharset Size: %d\nLength: %d\n\n", math.Round(math.Log2(math.Pow(float64(chars), float64(length)))*100)/100, chars, length)
+    if verbose {
+            text += fmt.Sprintf("Entropy: %.2f bits\nCharset Size: %d\nLength: %d\n\n", math.Round(math.Log2(math.Pow(float64(chars), float64(length)))*100)/100, chars, length)
+    } else {
+        text += fmt.Sprintf("Entropy: %.2f bits", math.Round(math.Log2(math.Pow(float64(chars), float64(length)))*100)/100)
+    }
 
-	if lowerCase > 0 {
-		passCharac = append(passCharac, "Lower Case Latin Alphabet (a-z)")
-	}
-	if upperCase > 0 {
-		passCharac = append(passCharac, "Upper Case Latin Alphabet (A-Z)")
-	}
-	if numbers > 0 {
-		passCharac = append(passCharac, "Numbers (0-9)")
-	}
-	if specialChars > 0 {
-		passCharac = append(passCharac, "Symbols (!@#$%()^&*)")
-	}
-	if specialCharsPlus > 0 {
-		passCharac = append(passCharac, "Special Chars (`~-_=+[{]}\\|;:'\",<.>/?)")
-	}
-	if space > 0 {
-		passCharac = append(passCharac, "Space (' ')")
-	}
-	if others > 0 {
-		passCharac = append(passCharac, "Others")
-	}
+    if verbose {
+        if lowerCase > 0 {
+            passCharac = append(passCharac, "Lower Case Latin Alphabet (a-z)")
+        }
+        if upperCase > 0 {
+            passCharac = append(passCharac, "Upper Case Latin Alphabet (A-Z)")
+        }
+        if numbers > 0 {
+            passCharac = append(passCharac, "Numbers (0-9)")
+        }
+        if specialChars > 0 {
+            passCharac = append(passCharac, "Symbols (!@#$%()^&*)")
+        }
+        if specialCharsPlus > 0 {
+            passCharac = append(passCharac, "Special Chars (`~-_=+[{]}\\|;:'\",<.>/?)")
+        }
+        if space > 0 {
+            passCharac = append(passCharac, "Space (' ')")
+        }
+        if others > 0 {
+            passCharac = append(passCharac, "Others")
+        }
 
-	for _, v := range passCharac {
-		text += fmt.Sprintf("%s\n", v)
-	}
+        for _, v := range passCharac {
+            text += fmt.Sprintf("%s\n", v)
+        }
+    }
 
-	return text
+    return text
 }
 
 func calculateEntropy(length int, lowercase, uppercase, digit, special, specialPlus, space bool) string {
@@ -195,22 +204,31 @@ func calculateEntropy(length int, lowercase, uppercase, digit, special, specialP
 }
 
 func main() {
-	if len(os.Args) < 2 {
-		printHelp()
-		os.Exit(1)
-	}
+    if len(os.Args) < 2 {
+        printHelp()
+        os.Exit(1)
+    }
 
-	option := os.Args[1]
+    option := os.Args[1]
+    verbose := false
 
-	switch option {
-	case "1":
-		if len(os.Args) < 3 {
-			fmt.Println("Missing password for option 1.")
-			os.Exit(1)
-		}
-		password := os.Args[2]
-		result := calculatePasswdEntropy(password)
-		fmt.Println(result)
+    for i := 2; i < len(os.Args); i++ {
+        if os.Args[i] == "-v" {
+            verbose = true
+            os.Args = append(os.Args[:i], os.Args[i+1:]...)
+            i-- // Adjust the index since we removed an element
+        }
+    }
+
+    switch option {
+    case "1":
+        if len(os.Args) < 3 {
+            fmt.Println("Missing password for option 1.")
+            os.Exit(1)
+        }
+        password := os.Args[2]
+        result := calculatePasswdEntropy(password, verbose)
+        fmt.Println(result)
 	case "2":
 		length := 0
 		if len(os.Args) >= 3 {
