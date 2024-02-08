@@ -97,8 +97,10 @@ Entropy: 83.36 bits
 
 ```
 $ entropy 3 Pass@123
-Password is semantically weak!
+Semantically weak: 
+Password contains a numeric sequence. 
+Password has a common word. 
 
 $ entropy 3 'Ash&r$%D6D!@#18723'
-Password is PROBABLY NOT semantically weak!
+PROBABLY NOT semantically weak, but needs further check
 ```
