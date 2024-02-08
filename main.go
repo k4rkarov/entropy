@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"math"
 	"os"
@@ -18,14 +19,26 @@ func isNumericSequence(password string) bool {
 	return false
 }
 
-func isCommonWord(password string) bool {
-	commonWords := []string{"senha", "password", "pass", "mudar", "change", "teste", "test"}
-	for _, word := range commonWords {
-		if strings.Contains(strings.ToLower(password), word) {
-			return true
+func isCommonWord(password string, filePath string) (bool, error) {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return false, err
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		word := scanner.Text()
+		if strings.Contains(strings.ToLower(password), strings.ToLower(word)) {
+			return true, nil
 		}
 	}
-	return false
+
+	if err := scanner.Err(); err != nil {
+		return false, err
+	}
+
+	return false, nil
 }
 
 func isYearPattern(password string) bool {
@@ -33,11 +46,30 @@ func isYearPattern(password string) bool {
 }
 
 func calculateSemanticStrength(password string) string {
-	if isNumericSequence(password) || isCommonWord(password) || isYearPattern(password) {
-		return "Password is semantically weak!"
+	var weaknessMessage string
+
+	if isNumericSequence(password) {
+		weaknessMessage += "\nPassword contains a numeric sequence. "
 	}
 
-	return "Password is PROBABLY NOT semantically weak!"
+	commonWordFilePath := "common_words.txt" // Replace with the actual path to your common words file
+	isCommon, err := isCommonWord(password, commonWordFilePath)
+	if err != nil {
+		return "Error reading common words file."
+	}
+	if isCommon {
+		weaknessMessage += "\nPassword has a common word. "
+	}
+
+	if isYearPattern(password) {
+		weaknessMessage += "\nPassword follows a year pattern. "
+	}
+
+	if weaknessMessage != "" {
+		return "Semantically weak: " + weaknessMessage
+	}
+
+	return "PROBABLY NOT semantically weak, but needs further check"
 }
 
 
