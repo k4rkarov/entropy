@@ -45,7 +45,7 @@ func isYearPattern(password string) bool {
 	return regexp.MustCompile(`(?i)[a-z]+\@\d{4}`).MatchString(password)
 }
 
-func calculateSemanticStrength(password string) string {
+func calculateSemanticStrength(password string, verbose bool) string {
 	var weaknessMessage string
 
 	if isNumericSequence(password) {
@@ -61,34 +61,32 @@ func calculateSemanticStrength(password string) string {
 		weaknessMessage += "\nPassword has a common word. "
 	}
 
-	if isYearPattern(password) {
-		weaknessMessage += "\nPassword follows a year pattern. "
-	}
-
-	if weaknessMessage != "" {
-		return "Semantically weak: " + weaknessMessage
+	if verbose && weaknessMessage != "" {
+		return "Semantically weak:" + weaknessMessage
+	} else if weaknessMessage != "" {
+		return "Semantically weak."
 	}
 
 	return "PROBABLY NOT semantically weak, but needs further check"
 }
 
 
+
 func printHelp() {
 	fmt.Println(`
-  ______       _                         
- |  ____|     | |                        
- | |__   _ __ | |_ _ __ ___  _ __  _   _ 
- |  __| | '_ \| __| '__/ _ \| '_ \| | | |
- | |____| | | | |_| | | (_) | |_) | |_| |
- |______|_| |_|\__|_|  \___/| .__/ \__, |
-                            | |     __/ |
-                            |_|    |___/ 
+ ______       _                         
+|  ____|     | |                        
+| |__   _ __ | |_ _ __ ___  _ __  _   _ 
+|  __| | '_ \| __| '__/ _ \| '_ \| | | |
+| |____| | | | |_| | | (_) | |_) | |_| |
+|______|_| |_|\__|_|  \___/| .__/ \__, |
+                           | |     __/ |
+                           |_|    |___/ 
  
        by k4rkarov (v1.0)
 
-
 Usage:
-  entropy <option> <password> [criteria] [-v]
+  entropy <option> <password> [criteria] [-L <file>] [-v]
 
 Options:
   1       Calculate Password Entropy
@@ -106,14 +104,35 @@ Criteria (for option 2):
 
 Output:
   -v      Increase verbosity level
+  -L      Specify a file with a list of passwords
 
 Examples:
-  entropy 1 mypassword
+  entropy 1 password123
   entropy 1 'Pass@2#@!'
   entropy 2 14 lc uc d
   entropy 3 Pass@123
-
+  entropy 1 -L passwords.txt
 `)
+}
+
+func readPasswordsFromFile(filePath string) ([]string, error) {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	var passwords []string
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		passwords = append(passwords, scanner.Text())
+	}
+
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
+
+	return passwords, nil
 }
 
 
@@ -236,31 +255,66 @@ func calculateEntropy(length int, lowercase, uppercase, digit, special, specialP
 }
 
 func main() {
-    if len(os.Args) < 2 {
-        printHelp()
-        os.Exit(1)
-    }
+	if len(os.Args) < 2 {
+		printHelp()
+		os.Exit(1)
+	}
 
-    option := os.Args[1]
-    verbose := false
+	option := os.Args[1]
+	verbose := false
+	passwordListFile := ""
+	passwords := []string{}
 
-    for i := 2; i < len(os.Args); i++ {
-        if os.Args[i] == "-v" {
-            verbose = true
-            os.Args = append(os.Args[:i], os.Args[i+1:]...)
-            i-- // Adjust the index since we removed an element
-        }
-    }
+	for i := 2; i < len(os.Args); i++ {
+		switch os.Args[i] {
+		case "-v":
+			verbose = true
+		case "-L":
+			if i+1 < len(os.Args) {
+				passwordListFile = os.Args[i+1]
+				i++ // Increment i to skip the next argument, which is the file path
+			} else {
+				fmt.Println("Missing file path after -L flag.")
+				os.Exit(1)
+			}
+		default:
+			passwords = append(passwords, os.Args[i])
+		}
+	}
 
-    switch option {
-    case "1":
-        if len(os.Args) < 3 {
-            fmt.Println("Missing password for option 1.")
-            os.Exit(1)
-        }
-        password := os.Args[2]
-        result := calculatePasswdEntropy(password, verbose)
-        fmt.Println(result)
+	if passwordListFile != "" {
+		filePasswords, err := readPasswordsFromFile(passwordListFile)
+		if err != nil {
+			fmt.Println("Error reading passwords from file:", err)
+			os.Exit(1)
+		}
+		passwords = append(passwords, filePasswords...)
+	}
+
+	switch option {
+	case "1", "3":
+		if len(passwords) == 0 {
+			printHelp()
+			os.Exit(1)
+		}
+		for _, password := range passwords {
+			switch option {
+			case "1":
+				result := calculatePasswdEntropy(password, verbose)
+				if passwordListFile != "" {
+					fmt.Printf("%s - %s\n", password, result)
+				} else {
+					fmt.Println(result)
+				}
+			case "3":
+				result := calculateSemanticStrength(password, verbose)
+				if passwordListFile != "" {
+					fmt.Printf("%s - %s\n", password, result)
+				} else {
+					fmt.Println(result)
+				}
+			}
+		}
 	case "2":
 		length := 0
 		if len(os.Args) >= 3 {
@@ -269,6 +323,11 @@ func main() {
 			if err == nil && val > 0 {
 				length = val
 			}
+		}
+
+		if length == 0 {
+			printHelp()
+			os.Exit(1)
 		}
 
 		lowercase := false
@@ -297,16 +356,8 @@ func main() {
 
 		result := calculateEntropy(length, lowercase, uppercase, digit, special, specialPlus, space)
 		fmt.Println(result)
-	case "3":
-		if len(os.Args) < 3 {
-			fmt.Println("Missing password for option 3.")
-			os.Exit(1)
-		}
-		password := os.Args[2]
-		result := calculateSemanticStrength(password)
-		fmt.Println(result)
 	default:
-		fmt.Println("Invalid option.")
+		printHelp()
+		os.Exit(1)
 	}
 }
-

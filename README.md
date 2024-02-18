@@ -43,7 +43,7 @@ $ entropy
 
 
 Usage:
-  entropy <option> <password> [criteria] [-v]
+  entropy <option> <password> [criteria] [-L <file>] [-v]
 
 Options:
   1       Calculate Password Entropy
@@ -61,12 +61,15 @@ Criteria (for option 2):
 
 Output:
   -v      Increase verbosity level
+  -L      Specify a file with a list of passwords
 
 Examples:
   entropy 1 mypassword
   entropy 1 'Pass@2#@!'
   entropy 2 14 lc uc d
   entropy 3 Pass@123
+  entropy 1 -L passwords.txt
+
 ```
 
 # Example
@@ -97,9 +100,13 @@ Entropy: 83.36 bits
 
 ```
 $ entropy 3 Pass@123
-Semantically weak: 
+Semantically weak.
+
+$ entropy 3 Pass@123 -v
+Semantically weak:
 Password contains a numeric sequence. 
 Password has a common word. 
+
 
 $ entropy 3 'Ash&r$%D6D!@#18723'
 PROBABLY NOT semantically weak, but needs further check
