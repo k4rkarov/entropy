@@ -8,7 +8,26 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	_ "embed"
 )
+
+//go:embed common_words.txt
+var commonWordsContent string
+
+// Replace the isCommonWord function with this modified version
+func isCommonWord(password, filePath string) (bool, error) {
+	// Use the embedded content
+	words := strings.Fields(commonWordsContent)
+
+	// Check if the password contains any common word
+	for _, word := range words {
+		if strings.Contains(strings.ToLower(password), strings.ToLower(word)) {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
 
 func isNumericSequence(password string) bool {
 	for i := 0; i < len(password)-2; i++ {
@@ -19,29 +38,6 @@ func isNumericSequence(password string) bool {
 		}
 	}
 	return false
-}
-
-
-func isCommonWord(password string, filePath string) (bool, error) {
-	file, err := os.Open(filePath)
-	if err != nil {
-		return false, err
-	}
-	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		word := scanner.Text()
-		if strings.Contains(strings.ToLower(password), strings.ToLower(word)) {
-			return true, nil
-		}
-	}
-
-	if err := scanner.Err(); err != nil {
-		return false, err
-	}
-
-	return false, nil
 }
 
 func isYearPattern(password string) bool {
