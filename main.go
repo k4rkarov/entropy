@@ -12,12 +12,15 @@ import (
 
 func isNumericSequence(password string) bool {
 	for i := 0; i < len(password)-2; i++ {
-		if password[i] >= '0' && password[i] <= '9' && password[i] == password[i+1]-1 && password[i] == password[i+2]-2 {
+		if (password[i] >= '0' && password[i] <= '9' &&
+			(password[i]+1 == password[i+1] && password[i]+2 == password[i+2] ||
+				password[i]-1 == password[i+1] && password[i]-2 == password[i+2])) {
 			return true
 		}
 	}
 	return false
 }
+
 
 func isCommonWord(password string, filePath string) (bool, error) {
 	file, err := os.Open(filePath)
@@ -42,8 +45,23 @@ func isCommonWord(password string, filePath string) (bool, error) {
 }
 
 func isYearPattern(password string) bool {
-	return regexp.MustCompile(`(?i)[a-z]+\@\d{4}`).MatchString(password)
+	return regexp.MustCompile(`(?i).*\d{4}`).MatchString(password)
 }
+
+func isAlphabeticSequence(password string) bool {
+    for i := 0; i < len(password)-2; i++ {
+        if (password[i] >= 'a' && password[i] <= 'z' &&
+            (password[i]+1 == password[i+1] && password[i]+2 == password[i+2] ||
+             password[i]-1 == password[i+1] && password[i]-2 == password[i+2])) ||
+           (password[i] >= 'A' && password[i] <= 'Z' &&
+            (password[i]+1 == password[i+1] && password[i]+2 == password[i+2] ||
+             password[i]-1 == password[i+1] && password[i]-2 == password[i+2])) {
+            return true
+        }
+    }
+    return false
+}
+
 
 func calculateSemanticStrength(password string, verbose bool) string {
 	var weaknessMessage string
@@ -60,6 +78,12 @@ func calculateSemanticStrength(password string, verbose bool) string {
 	if isCommon {
 		weaknessMessage += "\nPassword has a common word. "
 	}
+    if isYearPattern(password) {
+        weaknessMessage += "\nPassword has a year pattern. "
+    }
+    if isAlphabeticSequence(password) {
+        weaknessMessage += "\nPassword contains an alphabetic sequence. "
+    }
 
 	if verbose && weaknessMessage != "" {
 		return "Semantically weak:" + weaknessMessage
