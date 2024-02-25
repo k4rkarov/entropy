@@ -5,25 +5,18 @@ A Go program designed to assess password strength by calculating entropy and sem
 
 <br>
 
-# Download and install
+# Installation Instructions
 
-First, clone the repository to your machine:
+`entropy` requires **go1.18** to install successfully. Run the following command to install the latest version: 
 
-```
-git clone https://github.com/k4rkarov/entropy.git
-```
-
-Then, build the go binary:
-
-```
-cd entropy/
-go build -o entropy
+```sh
+go install github.com/k4rkarov/entropy/cmd/entropy@latest
 ```
 
 Now you can move the binary to your /usr/bin folder so you can use it freely on your OS:
 
 ```
-mv entropy /usr/bin
+mv go/bin/entropy /usr/bin
 ```
 
 # Usage
