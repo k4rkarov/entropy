@@ -289,7 +289,7 @@ func main() {
 		switch os.Args[i] {
 		case "-v":
 			verbose = true
-		case "-L":
+		case "-L": // Corrected the flag here
 			if i+1 < len(os.Args) {
 				passwordListFile = os.Args[i+1]
 				i++ // Increment i to skip the next argument, which is the file path
@@ -384,3 +384,4 @@ func main() {
 		os.Exit(1)
 	}
 }
+
