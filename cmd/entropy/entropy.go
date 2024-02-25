@@ -91,7 +91,6 @@ func calculateSemanticStrength(password string, verbose bool) string {
 }
 
 
-
 func printHelp() {
 	fmt.Println(`
  ______       _                         
@@ -109,11 +108,11 @@ Usage:
   entropy <option> <password> [criteria] [-L <file>] [-v]
 
 Options:
-  1       Calculate Password Entropy
-  2       Calculate Entropy based on specified criteria
-  3       Evaluate password's semantic strength
+  -p       Calculate Password Entropy
+  -pc      Calculate Entropy based on specified criteria
+  -s       Evaluate password's semantic strength
 
-Criteria (for option 2):
+Criteria (for -pe option):
   length  The number of characters in the password
   lc      lowercase characters: (a-z)
   uc      uppercase characters: (A-Z)
@@ -127,13 +126,14 @@ Output:
   -L      Specify a file with a list of passwords
 
 Examples:
-  entropy 1 password123
-  entropy 1 'Pass@2#@!'
-  entropy 2 14 lc uc d
-  entropy 3 Pass@123
-  entropy 1 -L passwords.txt
+  entropy -p password123
+  entropy -p 'Pass@2#@!' -v
+  entropy -pc 14 lc uc d -v
+  entropy -s Pass@123 -v
+  entropy -s -L passwords.txt
 `)
 }
+
 
 func readPasswordsFromFile(filePath string) ([]string, error) {
 	file, err := os.Open(filePath)
@@ -312,30 +312,20 @@ func main() {
 	}
 
 	switch option {
-	case "1", "3":
+	case "-p":
 		if len(passwords) == 0 {
 			printHelp()
 			os.Exit(1)
 		}
 		for _, password := range passwords {
-			switch option {
-			case "1":
-				result := calculatePasswdEntropy(password, verbose)
-				if passwordListFile != "" {
-					fmt.Printf("%s - %s\n", password, result)
-				} else {
-					fmt.Println(result)
-				}
-			case "3":
-				result := calculateSemanticStrength(password, verbose)
-				if passwordListFile != "" {
-					fmt.Printf("%s - %s\n", password, result)
-				} else {
-					fmt.Println(result)
-				}
+			result := calculatePasswdEntropy(password, verbose)
+			if passwordListFile != "" {
+				fmt.Printf("%s - %s\n", password, result)
+			} else {
+				fmt.Println(result)
 			}
 		}
-	case "2":
+	case "-pc":
 		length := 0
 		if len(os.Args) >= 3 {
 			lengthStr := os.Args[2]
@@ -376,6 +366,19 @@ func main() {
 
 		result := calculateEntropy(length, lowercase, uppercase, digit, special, specialPlus, space)
 		fmt.Println(result)
+	case "-s":
+		if len(passwords) == 0 {
+			printHelp()
+			os.Exit(1)
+		}
+		for _, password := range passwords {
+			result := calculateSemanticStrength(password, verbose)
+			if passwordListFile != "" {
+				fmt.Printf("%s - %s\n", password, result)
+			} else {
+				fmt.Println(result)
+			}
+		}
 	default:
 		printHelp()
 		os.Exit(1)
