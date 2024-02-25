@@ -29,27 +29,26 @@ This will display help menu.
 
 ```console
 
-  ______       _                         
- |  ____|     | |                        
- | |__   _ __ | |_ _ __ ___  _ __  _   _ 
- |  __| | '_ \| __| '__/ _ \| '_ \| | | |
- | |____| | | | |_| | | (_) | |_) | |_| |
- |______|_| |_|\__|_|  \___/| .__/ \__, |
-                            | |     __/ |
-                            |_|    |___/ 
+ ______       _                         
+|  ____|     | |                        
+| |__   _ __ | |_ _ __ ___  _ __  _   _ 
+|  __| | '_ \| __| '__/ _ \| '_ \| | | |
+| |____| | | | |_| | | (_) | |_) | |_| |
+|______|_| |_|\__|_|  \___/| .__/ \__, |
+                           | |     __/ |
+                           |_|    |___/ 
  
        by k4rkarov (v1.0)
-
 
 Usage:
   entropy <option> <password> [criteria] [-L <file>] [-v]
 
 Options:
-  1       Calculate Password Entropy
-  2       Calculate Entropy based on specified criteria
-  3       Evaluate password's semantic strength
+  -p       Calculate Password Entropy
+  -pc      Calculate Entropy based on specified criteria
+  -s       Evaluate password's semantic strength
 
-Criteria (for option 2):
+Criteria (for -pe option):
   length  The number of characters in the password
   lc      lowercase characters: (a-z)
   uc      uppercase characters: (A-Z)
@@ -63,23 +62,23 @@ Output:
   -L      Specify a file with a list of passwords
 
 Examples:
-  entropy 1 mypassword
-  entropy 1 'Pass@2#@!'
-  entropy 2 14 lc uc d
-  entropy 3 Pass@123
-  entropy 1 -L passwords.txt
+  entropy -p password123
+  entropy -p 'Pass@2#@!' -v
+  entropy -pc 14 lc uc d -v
+  entropy -s Pass@123 -v
+  entropy -s -L passwords.txt
 
 ```
 
 # Running entropy
 
-1 Calculate Password Entropy:
+Calculate Password Entropy:
 
 ```
-$ entropy 1 mypassword
+$ entropy -p mypassword
 Entropy: 47.00 bits
 
-$ entropy 1 mypassword -v
+$ entropy -p mypassword -v
 Entropy: 47.00 bits
 Charset Size: 26
 Length: 10
@@ -87,26 +86,26 @@ Length: 10
 Lower Case Latin Alphabet (a-z)
 ```
 
-2 Calculate Entropy based on data criteria:
+Calculate Entropy based on data criteria:
 
 ```
-$ entropy 2 14 lc uc d
+$ entropy -pc 14 lc uc d
 Entropy: 83.36 bits
 
 ```
 
-3 Calculate password's semantic strength:
+Calculate password's semantic strength:
 
 ```
-$ entropy 3 Pass@123
+$ entropy -s Pass@123
 Semantically weak.
 
-$ entropy 3 Pass@123 -v
+$ entropy -s Pass@123 -v
 Semantically weak:
 Password contains a numeric sequence. 
 Password has a common word. 
 
-
-$ entropy 3 'Ash&r$%D6D!@#18723'
+$ entropy -s 'Ash&r$%D6D!@#18723'
 PROBABLY NOT semantically weak, but needs further check
+
 ```
