@@ -1,3 +1,3 @@
-module github.com/k4rkarov/entropy
+module entropy
 
 go 1.18
