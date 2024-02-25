@@ -66,7 +66,7 @@ func calculateSemanticStrength(password string, verbose bool) string {
 		weaknessMessage += "\nPassword contains a numeric sequence. "
 	}
 
-	commonWordFilePath := "../../static/common_words.txt"
+	commonWordFilePath := "common_words.txt"
 	isCommon, err := isCommonWord(password, commonWordFilePath)
 	if err != nil {
 		return "Error reading common words file."
