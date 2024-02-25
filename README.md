@@ -20,8 +20,14 @@ mv go/bin/entropy /usr/bin
 ```
 
 # Usage
+
+```sh
+entropy -h
 ```
-$ entropy
+
+This will display help menu.
+
+```console
 
   ______       _                         
  |  ____|     | |                        
@@ -65,7 +71,7 @@ Examples:
 
 ```
 
-# Example
+# Running entropy
 
 1 Calculate Password Entropy:
 
