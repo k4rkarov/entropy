@@ -139,7 +139,7 @@ $ entropy -s Pass@123
 Semantically weak.
 
 $ entropy -s 'Ash&r$%D6D!@#18723'
-PROBABLY NOT semantically weak, but needs further check
+PROBABLY NOT semantically weak
 ```
 
 From a list
