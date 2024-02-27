@@ -14,7 +14,22 @@ import (
 //go:embed common_words.txt
 var commonWordsContent string
 
-// Replace the isCommonWord function with this modified version
+// ANSI escape codes for colors
+const (
+	redColor   = "\033[1;31m"
+	greenColor = "\033[1;32m"
+	resetColor = "\033[0m"
+)
+
+func addRedColor(message string) string {
+	return redColor + message + resetColor
+}
+
+func addGreenColor(message string) string {
+	return greenColor + message + resetColor
+}
+
+
 func isCommonWord(password, filePath string) (bool, error) {
 	// Use the embedded content
 	words := strings.Fields(commonWordsContent)
@@ -45,25 +60,24 @@ func isYearPattern(password string) bool {
 }
 
 func isAlphabeticSequence(password string) bool {
-    for i := 0; i < len(password)-2; i++ {
-        if (password[i] >= 'a' && password[i] <= 'z' &&
-            (password[i]+1 == password[i+1] && password[i]+2 == password[i+2] ||
-             password[i]-1 == password[i+1] && password[i]-2 == password[i+2])) ||
-           (password[i] >= 'A' && password[i] <= 'Z' &&
-            (password[i]+1 == password[i+1] && password[i]+2 == password[i+2] ||
-             password[i]-1 == password[i+1] && password[i]-2 == password[i+2])) {
-            return true
-        }
-    }
-    return false
+	for i := 0; i < len(password)-2; i++ {
+		if (password[i] >= 'a' && password[i] <= 'z' &&
+			(password[i]+1 == password[i+1] && password[i]+2 == password[i+2] ||
+				password[i]-1 == password[i+1] && password[i]-2 == password[i+2])) ||
+			(password[i] >= 'A' && password[i] <= 'Z' &&
+				(password[i]+1 == password[i+1] && password[i]+2 == password[i+2] ||
+					password[i]-1 == password[i+1] && password[i]-2 == password[i+2])) {
+			return true
+		}
+	}
+	return false
 }
-
 
 func calculateSemanticStrength(password string, verbose bool) string {
 	var weaknessMessage string
 
 	if isNumericSequence(password) {
-		weaknessMessage += "\nPassword contains a numeric sequence. "
+		weaknessMessage += "\nPassword contains a numeric sequence."
 	}
 
 	commonWordFilePath := "common_words.txt"
@@ -72,22 +86,22 @@ func calculateSemanticStrength(password string, verbose bool) string {
 		return "Error reading common words file."
 	}
 	if isCommon {
-		weaknessMessage += "\nPassword has a common word. "
+		weaknessMessage += "\nPassword has a common word."
 	}
-    if isYearPattern(password) {
-        weaknessMessage += "\nPassword has a year pattern. "
-    }
-    if isAlphabeticSequence(password) {
-        weaknessMessage += "\nPassword contains an alphabetic sequence. "
-    }
+	if isYearPattern(password) {
+		weaknessMessage += "\nPassword has a year pattern."
+	}
+	if isAlphabeticSequence(password) {
+		weaknessMessage += "\nPassword contains an alphabetic sequence."
+	}
 
 	if verbose && weaknessMessage != "" {
-		return "Semantically weak:" + weaknessMessage
+		return addRedColor("Semantically weak") + weaknessMessage
 	} else if weaknessMessage != "" {
-		return "Semantically weak."
+		return addRedColor("Semantically weak")
 	}
 
-	return "PROBABLY NOT semantically weak, but needs further check"
+	return addGreenColor("PROBABLY NOT semantically weak")
 }
 
 
@@ -112,7 +126,7 @@ Options:
   -pc      Calculate Entropy based on specified criteria
   -s       Evaluate password's semantic strength
 
-Criteria (for -pe option):
+Criteria (for -pc option):
   length  The number of characters in the password
   lc      lowercase characters: (a-z)
   uc      uppercase characters: (A-Z)
@@ -128,7 +142,7 @@ Output:
 Examples:
   entropy -p password123
   entropy -p 'Pass@2#@!' -v
-  entropy -pc 14 lc uc d -v
+  entropy -pc 14 lc uc d
   entropy -s Pass@123 -v
   entropy -s -L passwords.txt
 `)
