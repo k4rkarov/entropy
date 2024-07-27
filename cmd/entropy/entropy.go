@@ -8,7 +8,10 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+
 	_ "embed"
+
+	"github.com/nbutton23/zxcvbn-go"
 )
 
 //go:embed common_words.txt
@@ -29,26 +32,21 @@ func addGreenColor(message string) string {
 	return greenColor + message + resetColor
 }
 
-
 func isCommonWord(password, filePath string) (bool, error) {
-	// Use the embedded content
 	words := strings.Fields(commonWordsContent)
-
-	// Check if the password contains any common word
 	for _, word := range words {
 		if strings.Contains(strings.ToLower(password), strings.ToLower(word)) {
 			return true, nil
 		}
 	}
-
 	return false, nil
 }
 
 func isNumericSequence(password string) bool {
 	for i := 0; i < len(password)-2; i++ {
-		if (password[i] >= '0' && password[i] <= '9' &&
+		if password[i] >= '0' && password[i] <= '9' &&
 			(password[i]+1 == password[i+1] && password[i]+2 == password[i+2] ||
-				password[i]-1 == password[i+1] && password[i]-2 == password[i+2])) {
+				password[i]-1 == password[i+1] && password[i]-2 == password[i+2]) {
 			return true
 		}
 	}
@@ -75,6 +73,12 @@ func isAlphabeticSequence(password string) bool {
 
 func calculateSemanticStrength(password string, verbose bool) string {
 	var weaknessMessage string
+
+	// zxcvbn strength check
+	strength := zxcvbn.PasswordStrength(password, nil)
+	if strength.Score < 3 {
+		weaknessMessage += "\nPassword is semantically weak according to zxcvbn."
+	}
 
 	if isNumericSequence(password) {
 		weaknessMessage += "\nPassword contains a numeric sequence."
@@ -103,7 +107,6 @@ func calculateSemanticStrength(password string, verbose bool) string {
 
 	return addGreenColor("PROBABLY NOT semantically weak")
 }
-
 
 func printHelp() {
 	fmt.Println(`
@@ -148,7 +151,6 @@ Examples:
 `)
 }
 
-
 func readPasswordsFromFile(filePath string) ([]string, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -169,16 +171,15 @@ func readPasswordsFromFile(filePath string) ([]string, error) {
 	return passwords, nil
 }
 
-
 func calculatePasswdEntropy(password string, verbose bool) string {
-    length := len(password)
-    passCharac := make([]string, 0)
-    text := ""
+	length := len(password)
+	passCharac := make([]string, 0)
+	text := ""
 
-    var lowerCase, upperCase, numbers, specialChars, specialCharsPlus, space, others, chars int
+	var lowerCase, upperCase, numbers, specialChars, specialCharsPlus, space, others, chars int
 
-    for i := 0; i < length; i++ {
-        c := string(password[i])
+	for i := 0; i < length; i++ {
+		c := string(password[i])
 
 		if lowerCase == 0 && strings.Contains("abcdefghijklmnopqrstuvwxyz", c) {
 			chars += 26
@@ -210,46 +211,72 @@ func calculatePasswdEntropy(password string, verbose bool) string {
 		}
 	}
 
-    if verbose {
-            text += fmt.Sprintf("Entropy: %.2f bits\nCharset Size: %d\nLength: %d\n\n", math.Round(math.Log2(math.Pow(float64(chars), float64(length)))*100)/100, chars, length)
-    } else {
-        text += fmt.Sprintf("Entropy: %.2f bits", math.Round(math.Log2(math.Pow(float64(chars), float64(length)))*100)/100)
-    }
+	if verbose {
+		text += fmt.Sprintf("Entropy: %.2f bits\nCharset Size: %d\nLength: %d\n\n", math.Round(math.Log2(math.Pow(float64(chars), float64(length)))*100)/100, chars, length)
+	} else {
+		text += fmt.Sprintf("Entropy: %.2f bits", math.Round(math.Log2(math.Pow(float64(chars), float64(length)))*100)/100)
+	}
 
-    if verbose {
-        if lowerCase > 0 {
-            passCharac = append(passCharac, "Lower Case Latin Alphabet (a-z)")
-        }
-        if upperCase > 0 {
-            passCharac = append(passCharac, "Upper Case Latin Alphabet (A-Z)")
-        }
-        if numbers > 0 {
-            passCharac = append(passCharac, "Numbers (0-9)")
-        }
-        if specialChars > 0 {
-            passCharac = append(passCharac, "Symbols (!@#$%()^&*)")
-        }
-        if specialCharsPlus > 0 {
-            passCharac = append(passCharac, "Special Chars (`~-_=+[{]}\\|;:'\",<.>/?)")
-        }
-        if space > 0 {
-            passCharac = append(passCharac, "Space (' ')")
-        }
-        if others > 0 {
-            passCharac = append(passCharac, "Others")
-        }
+	if verbose {
+		if lowerCase > 0 {
+			passCharac = append(passCharac, "Lower Case Latin Alphabet (a-z)")
+		}
+		if upperCase > 0 {
+			passCharac = append(passCharac, "Upper Case Latin Alphabet (A-Z)")
+		}
+		if numbers > 0 {
+			passCharac = append(passCharac, "Numbers (0-9)")
+		}
+		if specialChars > 0 {
+			passCharac = append(passCharac, "Symbols (!@#$%()^&*)")
+		}
+		if specialCharsPlus > 0 {
+			passCharac = append(passCharac, "Special Chars (`~-_=+[{]}\\|;:'\",<.>/?)")
+		}
+		if space > 0 {
+			passCharac = append(passCharac, "Space (' ')")
+		}
+		if others > 0 {
+			passCharac = append(passCharac, "Others")
+		}
 
-        for _, v := range passCharac {
-            text += fmt.Sprintf("%s\n", v)
-        }
-    }
+		for _, v := range passCharac {
+			text += fmt.Sprintf("%s\n", v)
+		}
+	}
 
-    return text
+	return text
 }
 
-func calculateEntropy(length int, lowercase, uppercase, digit, special, specialPlus, space bool) string {
+func calculateEntropy(length int, criteria []string) string {
 	text := ""
 	chars := 0
+
+	lowercase := false
+	uppercase := false
+	digit := false
+	special := false
+	specialPlus := false
+	space := false
+
+	for _, criterion := range criteria {
+		switch criterion {
+		case "lc":
+			lowercase = true
+		case "uc":
+			uppercase = true
+		case "d":
+			digit = true
+		case "s":
+			special = true
+		case "sp":
+			specialPlus = true
+		case "spc":
+			space = true
+		default:
+			text += fmt.Sprintf("Unknown criterion: %s\n", criterion)
+		}
+	}
 
 	if lowercase {
 		chars += 26
@@ -270,20 +297,13 @@ func calculateEntropy(length int, lowercase, uppercase, digit, special, specialP
 		chars += 1
 	}
 
-	if length > 0 && (lowercase || uppercase || digit || special || specialPlus || space) {
-    text += fmt.Sprintf("Entropy: %.2f bits", math.Round(math.Log2(math.Pow(float64(chars), float64(length)))*100)/100)
-} else if length > 0 {
-    text += "No valid criteria selected. Please select at least one criteria:\n" +
-  "  lc  - lowercase characters: (a-z)\n" +
-  "  uc  - uppercase characters: (A-Z)\n" +
-  "  d   - digits: (0-9)\n" +
-  "  s   - special characters: !@#$%^&*()\n" +
-  "  sp  - additional special characters: ~-_=+[{]}|;:'\",<.>/?\n" +
-  "  spc - space (' ')\n"
-
-} else {
-    text += "Missing password length for options 2."
-}
+	if chars == 0 {
+		text += "Invalid criteria specified.\n"
+	} else {
+		entropy := float64(length) * math.Log2(float64(chars))
+		text += fmt.Sprintf("Password Entropy: %.2f bits\n", entropy)
+		text += fmt.Sprintf("Charset Size: %d\n", chars)
+	}
 
 	return text
 }
@@ -291,111 +311,61 @@ func calculateEntropy(length int, lowercase, uppercase, digit, special, specialP
 func main() {
 	if len(os.Args) < 2 {
 		printHelp()
-		os.Exit(1)
+		return
 	}
 
 	option := os.Args[1]
 	verbose := false
-	passwordListFile := ""
-	passwords := []string{}
+	var filePath string
 
 	for i := 2; i < len(os.Args); i++ {
-		switch os.Args[i] {
-		case "-v":
+		if os.Args[i] == "-v" {
 			verbose = true
-		case "-L": // Corrected the flag here
-			if i+1 < len(os.Args) {
-				passwordListFile = os.Args[i+1]
-				i++ // Increment i to skip the next argument, which is the file path
-			} else {
-				fmt.Println("Missing file path after -L flag.")
-				os.Exit(1)
-			}
-		default:
-			passwords = append(passwords, os.Args[i])
+		} else if os.Args[i] == "-L" && i+1 < len(os.Args) {
+			filePath = os.Args[i+1]
+			i++
 		}
-	}
-
-	if passwordListFile != "" {
-		filePasswords, err := readPasswordsFromFile(passwordListFile)
-		if err != nil {
-			fmt.Println("Error reading passwords from file:", err)
-			os.Exit(1)
-		}
-		passwords = append(passwords, filePasswords...)
 	}
 
 	switch option {
 	case "-p":
-		if len(passwords) == 0 {
-			printHelp()
-			os.Exit(1)
+		if len(os.Args) < 3 {
+			fmt.Println("Error: Password not specified.")
+			return
 		}
-		for _, password := range passwords {
-			result := calculatePasswdEntropy(password, verbose)
-			if passwordListFile != "" {
-				fmt.Printf("%s - %s\n", password, result)
-			} else {
-				fmt.Println(result)
-			}
-		}
+		password := os.Args[2]
+		fmt.Println(calculatePasswdEntropy(password, verbose))
 	case "-pc":
-		length := 0
-		if len(os.Args) >= 3 {
-			lengthStr := os.Args[2]
-			val, err := strconv.Atoi(lengthStr)
-			if err == nil && val > 0 {
-				length = val
-			}
+		if len(os.Args) < 4 {
+			fmt.Println("Error: Length or criteria not specified.")
+			return
 		}
-
-		if length == 0 {
-			printHelp()
-			os.Exit(1)
+		length, err := strconv.Atoi(os.Args[2])
+		if err != nil {
+			fmt.Println("Error: Length must be an integer.")
+			return
 		}
-
-		lowercase := false
-		uppercase := false
-		digit := false
-		special := false
-		specialPlus := false
-		space := false
-
-		for i := 3; i < len(os.Args); i++ {
-			switch os.Args[i] {
-			case "lc":
-				lowercase = true
-			case "uc":
-				uppercase = true
-			case "d":
-				digit = true
-			case "s":
-				special = true
-			case "sp":
-				specialPlus = true
-			case "spc":
-				space = true
-			}
-		}
-
-		result := calculateEntropy(length, lowercase, uppercase, digit, special, specialPlus, space)
-		fmt.Println(result)
+		criteria := os.Args[3:]
+		fmt.Println(calculateEntropy(length, criteria))
 	case "-s":
-		if len(passwords) == 0 {
-			printHelp()
-			os.Exit(1)
-		}
-		for _, password := range passwords {
-			result := calculateSemanticStrength(password, verbose)
-			if passwordListFile != "" {
-				fmt.Printf("%s - %s\n", password, result)
-			} else {
-				fmt.Println(result)
+		if filePath != "" {
+			passwords, err := readPasswordsFromFile(filePath)
+			if err != nil {
+				fmt.Printf("Error reading file: %v\n", err)
+				return
 			}
+			for _, password := range passwords {
+				fmt.Printf("Password: %s\n%s\n", password, calculateSemanticStrength(password, verbose))
+			}
+		} else {
+			if len(os.Args) < 3 {
+				fmt.Println("Error: Password not specified.")
+				return
+			}
+			password := os.Args[2]
+			fmt.Println(calculateSemanticStrength(password, verbose))
 		}
 	default:
 		printHelp()
-		os.Exit(1)
 	}
 }
-
