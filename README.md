@@ -7,12 +7,13 @@ A Go-based program crafted to evaluate the strength of passwords through the ana
 
 # Installation Instructions
 
-`entropy` requires **go1.18** to install successfully. Run the following command to install the latest version: 
-
+`entropy` requires **Go 1.18** or later to install successfully. Run the following command to install the latest version: 
 
 ```sh
 go install github.com/k4rkarov/entropy/cmd/entropy@latest
 ```
+
+The `-s` flag relies on the `zxcvbn-go` library for semantic strength evaluation. The library will be automatically installed when you run `entropy` if it's not already available. Ensure your Go environment is properly configured to fetch and install dependencies.
 
 # Usage
 
@@ -20,7 +21,7 @@ go install github.com/k4rkarov/entropy/cmd/entropy@latest
 entropy -h
 ```
 
-This will display help menu.
+This will display the help menu.
 
 ```console
 
@@ -33,7 +34,7 @@ This will display help menu.
                            | |     __/ |
                            |_|    |___/ 
  
-       by k4rkarov (v1.0)
+       by k4rkarov (v2.0)
 
 Usage:
   entropy <option> <password> [criteria] [-L <file>] [-v]
@@ -67,7 +68,7 @@ Examples:
 
 # Running entropy
 
-### Calculate Password Entropy:
+### Calculate Password Entropy
 
 ```
 $ entropy -p mypassword
@@ -125,14 +126,16 @@ Lower Case Latin Alphabet (a-z)
 Space (' ')
 ```
 
-### Calculate Entropy based on data criteria:
+### Calculate Entropy Based on Data Criteria
 
 ```
 $ entropy -pc 14 lc uc d
 Entropy: 83.36 bits
 ```
 
-### Calculate password's semantic strength:
+### Calculate Password's Semantic Strength
+
+The -s option evaluates the semantic strength of the password using the zxcvbn-go library. Additionally, you can use the common_words.txt file to customize the list of common words. You can add words from other languages or modify the list as needed.
 
 ```
 $ entropy -s Pass@123
@@ -156,18 +159,30 @@ Adding verbosity
 
 ```
 $ entropy -s Pass@123 -v
-Semantically weak:
-Password contains a numeric sequence. 
+Pass@123 - Semantically weak
+Password is semantically weak according to zxcvbn.
+Password contains a numeric sequence.
 Password has a common word.
 
 $ entropy -s -L list.txt -v
-password123 - Semantically weak:
-Password contains a numeric sequence. 
-Password has a common word. 
-qwerty - Semantically weak:
-Password has a common word. 
-aloha@2024 - Semantically weak:
-Password has a common word. 
-Password has a year pattern. 
+password123 - Semantically weak
+Password is semantically weak according to zxcvbn.
+Password contains a numeric sequence.
+Password has a common word.
+qwerty - Semantically weak
+Password is semantically weak according to zxcvbn.
+Password has a common word.
+aloha@2024 - Semantically weak
+Password is semantically weak according to zxcvbn.
+Password has a common word.
+Password has a year pattern.
 impossible for you to know - PROBABLY NOT semantically weak
 ```
+
+### Notes
+
+- If your password contains any special characters, enclose the entire password in single quotes to avoid issues with the program. Special characters include: `!@#$%^&*(), \~-_=+[{]}|;:,<.>/?,` and spaces.
+
+For any issues or feature requests, please open an issue on the [GitHub repository](https://github.com/k4rkarov/entropy).
+
+Enjoy using Entropy to secure your passwords!

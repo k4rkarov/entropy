@@ -119,7 +119,7 @@ func printHelp() {
                            | |     __/ |
                            |_|    |___/ 
  
-       by k4rkarov (v1.0)
+       by k4rkarov (v2.0)
 
 Usage:
   entropy <option> <password> [criteria] [-L <file>] [-v]
@@ -311,30 +311,53 @@ func calculateEntropy(length int, criteria []string) string {
 func main() {
 	if len(os.Args) < 2 {
 		printHelp()
-		return
+		os.Exit(1)
 	}
 
 	option := os.Args[1]
 	verbose := false
-	var filePath string
+	passwordListFile := ""
+	passwords := []string{}
 
 	for i := 2; i < len(os.Args); i++ {
-		if os.Args[i] == "-v" {
+		switch os.Args[i] {
+		case "-v":
 			verbose = true
-		} else if os.Args[i] == "-L" && i+1 < len(os.Args) {
-			filePath = os.Args[i+1]
-			i++
+		case "-L":
+			if i+1 < len(os.Args) {
+				passwordListFile = os.Args[i+1]
+				i++ // Increment i to skip the next argument, which is the file path
+			} else {
+				fmt.Println("Missing file path after -L flag.")
+				os.Exit(1)
+			}
+		default:
+			passwords = append(passwords, os.Args[i])
 		}
 	}
 
+	if passwordListFile != "" {
+		filePasswords, err := readPasswordsFromFile(passwordListFile)
+		if err != nil {
+			fmt.Println("Error reading passwords from file:", err)
+			os.Exit(1)
+		}
+		passwords = append(passwords, filePasswords...)
+	}
+
+	// Debug: Print passwords to verify they are read correctly
+	//fmt.Printf("Passwords loaded: %v\n", passwords)
+
 	switch option {
 	case "-p":
-		if len(os.Args) < 3 {
-			fmt.Println("Error: Password not specified.")
-			return
+		if len(passwords) == 0 {
+			printHelp()
+			os.Exit(1)
 		}
-		password := os.Args[2]
-		fmt.Println(calculatePasswdEntropy(password, verbose))
+		for _, password := range passwords {
+			result := calculatePasswdEntropy(password, verbose)
+			fmt.Printf("%s - %s\n", password, result)
+		}
 	case "-pc":
 		if len(os.Args) < 4 {
 			fmt.Println("Error: Length or criteria not specified.")
@@ -348,24 +371,16 @@ func main() {
 		criteria := os.Args[3:]
 		fmt.Println(calculateEntropy(length, criteria))
 	case "-s":
-		if filePath != "" {
-			passwords, err := readPasswordsFromFile(filePath)
-			if err != nil {
-				fmt.Printf("Error reading file: %v\n", err)
-				return
-			}
-			for _, password := range passwords {
-				fmt.Printf("Password: %s\n%s\n", password, calculateSemanticStrength(password, verbose))
-			}
-		} else {
-			if len(os.Args) < 3 {
-				fmt.Println("Error: Password not specified.")
-				return
-			}
-			password := os.Args[2]
-			fmt.Println(calculateSemanticStrength(password, verbose))
+		if len(passwords) == 0 {
+			printHelp()
+			os.Exit(1)
+		}
+		for _, password := range passwords {
+			result := calculateSemanticStrength(password, verbose)
+			fmt.Printf("%s - %s\n", password, result)
 		}
 	default:
 		printHelp()
+		os.Exit(1)
 	}
 }
