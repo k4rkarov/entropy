@@ -135,7 +135,7 @@ Entropy: 83.36 bits
 
 ### Calculate Password's Semantic Strength
 
-The -s option evaluates the semantic strength of the password using the zxcvbn-go library. Additionally, you can customize the list of common words by editing the common_words.txt file. You can add words from other languages or modify the list as needed. Ensure these modifications are made before compiling the Go program.
+The `-s` option evaluates the semantic strength of the password using the `zxcvbn-go` library. Additionally, you can customize the list of common words by editing the `common_words.txt` file. You can add words from other languages or modify the list as needed. Ensure these modifications are made **before compiling the Go program**.
 
 ```
 $ entropy -s Pass@123
